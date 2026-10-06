@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>OmniPedia - 100 Tri Thức & Mẹo Vặt Khoa Học</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    button, .touch-btn { touch-action: manipulation; }
+    .perspective-1000 { perspective: 1200px; }
+    .card-inner { 
+      transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+      transform-style: preserve-3d;
+      will-change: transform;
+      transform: translateZ(0);
+    }
+    .backface-hidden { 
+      backface-visibility: hidden; 
+      -webkit-backface-visibility: hidden; 
+      transform: translate3d(0, 0, 1px);
+    }
+    .rotate-y-180 { transform: rotateY(180deg) translate3d(0, 0, 1px); }
+    .card-flipped .card-inner { transform: rotateY(180deg); }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen selection:bg-indigo-500 selection:text-white pb-28 antialiased">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 backdrop-blur-xl bg-slate-950/80 border-b border-slate-800/80 transition-colors">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5 cursor-pointer" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+        <span class="text-2xl p-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20">💡</span>
+        <div>
+          <span class="text-lg sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 via-sky-400 to-emerald-400 bg-clip-text text-transparent">
+            OmniPedia
+          </span>
+          <span class="hidden sm:inline-block text-[11px] font-mono text-slate-400 ml-2 px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700">100 Tri Thức</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span id="statsBadge" class="text-xs font-mono px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-indigo-300 font-semibold">
+          100 Mẹo
+        </span>
+        <button id="themeToggle" class="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 transition" title="Đổi giao diện">
+          <span id="themeIcon">☀️</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero & Controls -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12">
+    <div class="text-center max-w-2xl mx-auto mb-6">
+      <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white mb-2 leading-tight">
+        Bách Khoa 100 Bí Quyết & Bản Chất Khoa Học
+      </h1>
+      <p class="text-slate-400 text-xs sm:text-sm">
+        Chạm vào từng thẻ để lật xem nguyên lý vật lý, hóa học và sinh học đằng sau.
+      </p>
+    </div>
+
+    <!-- Thanh tìm kiếm -->
+    <div class="max-w-xl mx-auto mb-5">
+      <div class="relative">
+        <input 
+          type="text" 
+          id="searchInput" 
+          placeholder="Tìm theo từ khóa, cơ chế, hashtag (#bep, #nao_bo)..." 
+          class="w-full pl-11 pr-10 py-3 rounded-2xl bg-slate-900/90 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/80 focus:border-indigo-500 transition text-sm shadow-xl"
+        >
+        <span class="absolute left-4 top-3.5 text-slate-400 text-sm">🔍</span>
+        <button id="clearSearch" class="hidden absolute right-3.5 top-3 text-slate-400 hover:text-white p-1 text-xs">✕</button>
+      </div>
+    </div>
+
+    <!-- Bộ lọc danh mục -->
+    <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-3 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0" id="categoryContainer"></div>
+
+    <!-- Lưới hiển thị 100 thẻ -->
+    <div id="cardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+
+    <div id="emptyState" class="hidden text-center py-20">
+      <div class="text-5xl mb-3">🔍</div>
+      <p class="text-base font-semibold text-slate-200">Không tìm thấy kiến thức phù hợp</p>
+      <p class="text-xs text-slate-500 mt-1">Hãy thử đổi từ khóa tìm kiếm hoặc chọn danh mục khác.</p>
+    </div>
+  </main>
+
+  <!-- Thanh công cụ nổi ở đáy màn hình -->
+  <div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-slate-900/90 backdrop-blur-lg border border-slate-800/90 px-3 py-2 rounded-2xl shadow-2xl flex items-center gap-2 max-w-[92vw]">
+    <button id="dockRandomBtn" class="touch-btn flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 text-white rounded-xl text-xs font-bold shadow-md active:scale-95 transition">
+      <span>🎲</span>
+      <span>Bốc ngẫu nhiên</span>
+    </button>
+    <button id="dockQuizBtn" class="touch-btn flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md active:scale-95 transition">
+      <span>🎯</span>
+      <span>Trắc nghiệm</span>
+    </button>
+    <button id="dockTopBtn" class="touch-btn p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs active:scale-95 transition" title="Lên đầu trang">
+      <span>⬆️</span>
+    </button>
+  </div>
+
+  <!-- Thông báo Toast -->
+  <div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-800 border border-slate-700 text-indigo-300 px-4 py-2 rounded-xl text-xs font-semibold shadow-2xl opacity-0 pointer-events-none transition-all duration-300">
+    Đã sao chép nội dung mẹo!
+  </div>
+
+  <!-- Hộp thoại Quiz -->
+  <div id="quizModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 hidden">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-3xl shadow-2xl p-6 relative">
+      <button id="closeQuiz" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl p-1">&times;</button>
+      <div id="quizContent"></div>
+    </div>
+  </div>
+
+  <script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(freq = 550, duration = 0.08, type = "sine") {
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function triggerHaptic(ms = 12) {
+      if (navigator.vibrate) navigator.vibrate(ms);
+    }
+
+    function showToast(text) {
+      const toast = document.getElementById('toast');
+      toast.textContent = text;
+      toast.classList.remove('opacity-0');
+      toast.classList.add('opacity-100', '-translate-y-1');
+      setTimeout(() => {
+        toast.classList.add('opacity-0');
+        toast.classList.remove('opacity-100', '-translate-y-1');
+      }, 2000);
+    }
+
+    // 100 TRI THỨC VÀ BÍ QUYẾT KHOA HỌC
+    const tipsData = [
+      // --- Ẩm thực & Bếp (1-20) ---
+      { id: 1, title: "Bọc cuống chuối để lâu thâm", category: "Ẩm thực & Bếp", icon: "🍌", tags: ["#bao_quan", "#ethylene"], tip: "Dùng màng bọc bọc chặt cuống nải chuối giúp chuối tươi thêm 3-5 ngày.", science: "Khí ethylene kích thích quả chín thoát ra chủ yếu từ cuống. Chặn kín cuống làm chậm quá trình phân hủy tinh bột thành đường." },
+      { id: 2, title: "Chống dính chảo inox bằng Leidenfrost", category: "Ẩm thực & Bếp", icon: "🍳", tags: ["#chao_inox", "#vat_ly"], tip: "Làm nóng chảo đến khi giọt nước nhỏ vào vo tròn lăn như bi thủy tinh trước khi cho dầu.", science: "Ở nhiệt độ tới hạn (~193°C), hơi nước bốc lên tạo lớp đệm đệm khí ngăn thực phẩm tiếp xúc trực tiếp các rãnh vi mô của kim loại." },
+      { id: 3, title: "Khử cay bằng sữa thay vì nước lọc", category: "Ẩm thực & Bếp", icon: "🥛", tags: ["#casein", "#giai_cay"], tip: "Uống sữa tươi hoặc ngậm sữa chua khi ăn ớt cay bỏng lưỡi.", science: "Capsaicin trong ớt kỵ nước nên nước lọc chỉ làm loãng và lan rộng vị cay. Protein casein trong sữa liên kết và cuốn trôi capsaicin khỏi thụ thể thần kinh." },
+      { id: 4, title: "Ướp thịt mềm mọng bằng dứa hoặc kiwi", category: "Ẩm thực & Bếp", icon: "🍍", tags: ["#uop_thit", "#enzyme"], tip: "Xay chút dứa hoặc kiwi vào sốt ướp thịt trong tối đa 15-20 phút.", science: "Dứa chứa enzyme bromelain, kiwi chứa actinidin; đây là các protease mạnh phân giải chuỗi collagen và sợi cơ dai cực nhanh." },
+      { id: 5, title: "Khử mùi thớt gỗ bằng chanh và muối", category: "Ẩm thực & Bếp", icon: "🍋", tags: ["#ve_sinh", "#axit_citric"], tip: "Rắc muối hột lên thớt, chà bằng nửa quả chanh rồi rửa bằng nước ấm.", science: "Axit citric phá hủy màng vi khuẩn kết hợp muối hạt có tính háo nước và ma sát cơ học kéo dịch bẩn trong thớ gỗ ra ngoài." },
+      { id: 6, title: "Khử vị đắng cà phê bằng hạt muối", category: "Ẩm thực & Bếp", icon: "☕", tags: ["#ca_phe", "#natri"], tip: "Thêm một nhúm muối siêu nhỏ vào tách cà phê bị chiết xuất quá đà.", science: "Ion natri phong tỏa thụ thể cảm nhận vị đắng trên gai lưỡi trước khi tín hiệu đến não, tôn lên vị ngọt và béo tự nhiên." },
+      { id: 7, title: "Tránh để bánh mì trong ngăn mát", category: "Ẩm thực & Bếp", icon: "🥖", tags: ["#tinh_bot", "#banh_mi"], tip: "Bánh mì nên để nhiệt độ phòng hoặc cấp đông ngăn đá, không để ngăn mát.", science: "Ở 2-8°C, hiện tượng thoái hóa tinh bột (retrogradation) diễn ra nhanh gấp 6 lần, làm bánh mì mất nước và khô cứng cấp kỳ." },
+      { id: 8, title: "Thấm khô mặt thịt trước khi áp chảo", category: "Ẩm thực & Bếp", icon: "🥩", tags: ["#maillard", "#bit_tet"], tip: "Dùng khăn giấy thấm kiệt nước bề mặt thịt bò trước khi rán lửa lớn.", science: "Phản ứng hóa nâu tạo hương thơm Maillard chỉ bùng nổ trên 140°C. Thịt ướt làm nhiệt lượng bị tiêu hao để đun sôi nước ở 100°C khiến thịt bị luộc chín." },
+      { id: 9, title: "Bảo quản nấm tươi bằng túi giấy", category: "Ẩm thực & Bếp", icon: "🍄", tags: ["#nam_tuoi", "#bao_quan"], tip: "Cho nấm vào túi giấy gập nhẹ miệng để trong tủ lạnh thay vì túi nilon.", science: "Nấm hô hấp và thoát ẩm liên tục. Túi nilon tích tụ đọng sương làm nấm thối nhớt, trong khi túi giấy hấp thụ ẩm dư thừa vừa đủ." },
+      { id: 10, title: "Cắt hành không cay mắt nhờ làm lạnh", category: "Ẩm thực & Bếp", icon: "🧅", tags: ["#hanh_tay", "#cay_mat"], tip: "Cho hành vào ngăn mát 30 phút hoặc ngâm nước lạnh trước khi thái.", science: "Nhiệt độ thấp ức chế enzyme lachrymatory synthase hoạt động và giảm độ bay hơi của hợp chất lưu huỳnh kích ứng tuyến lệ." },
+      { id: 11, title: "Kiểm tra trứng tươi bằng cốc nước", category: "Ẩm thực & Bếp", icon: "🥚", tags: ["#trung_ga", "#kiem_tra"], tip: "Trứng chìm nằm ngang là rất tươi, dựng đứng là trứng cũ, nổi bồng bềnh là đã hỏng.", science: "Theo thời gian, nước bên trong thoát qua vỏ xốp và không khí lọt vào buồng khí ở đầu to, làm giảm tỷ trọng quả trứng khiến nó nổi." },
+      { id: 12, title: "Kích chuối chín nhanh bằng quả táo", category: "Ẩm thực & Bếp", icon: "🍎", tags: ["#ethylene", "#trai_cay"], tip: "Ủ chuối xanh chung với một quả táo chín trong túi giấy kín.", science: "Táo chín giải phóng lượng lớn khí ethylene trong môi trường kín kích thích chuối chuyển hóa tinh bột thành đường chỉ sau 24-48 giờ." },
+      { id: 13, title: "Bóc vỏ trứng luộc dễ nhờ sốc nhiệt", category: "Ẩm thực & Bếp", icon: "🐣", tags: ["#luoc_trung", "#soc_nhiet"], tip: "Thả trứng vào nước đang sôi, luộc xong ngâm ngay vào âu nước đá.", science: "Nhiệt độ sôi đột ngột làm protein màng vỏ đông cứng tách khỏi lòng trắng, nước đá co rút thể tích tạo khoảng trống dễ bóc." },
+      { id: 14, title: "Rau củ nướng giòn nhờ tạo khoảng cách", category: "Ẩm thực & Bếp", icon: "🥕", tags: ["#nuong_rau", "#nhiet_do"], tip: "Xếp rau củ thưa thớt trên khay nướng, không xếp chồng chất lên nhau.", science: "Xếp sát nhau khiến hơi nước bốc lên bị kẹt lại biến thành luồng khí hấp chín rau ỉu xìu thay vì nướng khô giòn bề mặt." },
+      { id: 15, title: "Rã đông thịt thần tốc trên đĩa nhôm", category: "Ẩm thực & Bếp", icon: "🍖", tags: ["#ra_dong", "#dan_nhiet"], tip: "Kẹp miếng thịt đông lạnh giữa 2 chiếc nồi hoặc khay nhôm phẳng.", science: "Nhôm có hệ số dẫn nhiệt cao gấp 10 lần gốm sứ và inox, hút nhiệt từ không khí truyền thẳng vào khối thịt làm tan đá nhanh gấp 3 lần." },
+      { id: 16, title: "Giữ rau luộc xanh mướt bằng mở vung", category: "Ẩm thực & Bếp", icon: "🥦", tags: ["#rau_luoc", "#chlorophyll"], tip: "Luộc rau lửa lớn, mở nắp vung và vớt ra ngâm nước đá lạnh.", science: "Mở nắp giúp các axit hữu cơ dễ bay hơi thoát ra ngoài, ngăn chặn ion $H^+$ thay thế nguyên tử $Mg$ trong diệp lục làm rau ngả màu úa." },
+      { id: 17, title: "Chống kem đóng đá dăm trong tủ lạnh", category: "Ẩm thực & Bếp", icon: "🍨", tags: ["#kem", "#bao_quan"], tip: "Cho cả hộp kem vào một túi zip kéo kín trước khi cất ngăn đá.", science: "Túi zip ngăn không khí khô lạnh trong tủ tiếp xúc bề mặt kem, chặn quá trình thăng hoa và tái kết tinh tạo vụn đá dăm lạo xạo." },
+      { id: 18, title: "Chống trào nồi bằng đũa hoặc muỗng gỗ", category: "Ẩm thực & Bếp", icon: "🍲", tags: ["#chong_trao", "#nhiet_hoc"], tip: "Đặt ngang một chiếc đũa hoặc thìa gỗ khô ráo trên miệng nồi đang sôi.", science: "Gỗ kỵ nước và dẫn nhiệt kém. Bọt khí nóng dâng lên chạm vào bề mặt gỗ khô sẽ bị vỡ bọt lập tức và làm thoát hơi nóng." },
+      { id: 19, title: "Phi hành caramel siêu tốc bằng baking soda", category: "Ẩm thực & Bếp", icon: "🍳", tags: ["#caramel", "#baking_soda"], tip: "Thêm một nhúm nhỏ baking soda vào chảo hành tây đang xào.", science: "Môi trường kiềm hóa (tăng pH) thúc đẩy phản ứng Maillard diễn ra với tốc độ gấp đôi, làm hành ngả màu vàng cánh gián chỉ trong vài phút." },
+      { id: 20, title: "Cơm nguội có hàm lượng calo hấp thụ thấp hơn", category: "Ẩm thực & Bếp", icon: "🍚", tags: ["#com_nguoi", "#tinh_bot_khang"], tip: "Cơm nấu chín để nguội trong tủ lạnh rồi hâm nóng lại ăn sẽ lâu tăng đường huyết.", science: "Quá trình làm lạnh biến tinh bột dễ tiêu thành tinh bột kháng (resistant starch) hoạt động như chất xơ, không bị phân giải ở ruột non." },
+
+      // --- Công nghệ & Kỹ thuật số (21-36) ---
+      { id: 21, title: "Mở lại tab vừa đóng nhầm trên trình duyệt", category: "Công nghệ", icon: "💻", tags: ["#phim_tat", "#chrome"], tip: "Bấm Ctrl + Shift + T (Cmd + Shift + T trên Mac) để khôi phục lại tab vừa tắt.", science: "Trình duyệt lưu trữ các trang đã đóng trong cấu trúc ngăn xếp bộ nhớ (Session Stack), phím tắt này kích hoạt lệnh lấy phần tử trên đỉnh." },
+      { id: 22, title: "Lịch sử bộ nhớ tạm Clipboard trên Windows", category: "Công nghệ", icon: "📋", tags: ["#windows", "#clipboard"], tip: "Bấm tổ hợp Windows + V để xem và dán lại toàn bộ lịch sử copy gần đây.", science: "Clipboard thông thường ghi đè bộ nhớ, tổ hợp này gọi tiến trình SQLite lưu đệm cục bộ tối đa 25 mẩu văn bản và hình ảnh trước đó." },
+      { id: 23, title: "Tìm đúng định dạng tài liệu trên Google", category: "Công nghệ", icon: "🔎", tags: ["#google", "#tim_kiem"], tip: "Thêm 'filetype:pdf' hoặc 'filetype:xlsx' sau từ khóa để tải tài liệu gốc.", science: "Google phân loại chỉ mục tài liệu theo header MIME, toán tử này lọc cứng các trang web để chỉ trả về tệp nhị phân khớp định dạng." },
+      { id: 24, title: "Sạc pin smartphone nhanh hơn bằng Airplane Mode", category: "Công nghệ", icon: "⚡", tags: ["#pin", "#sac_nhanh"], tip: "Bật Chế độ máy bay khi cắm sạc điện thoại lúc bạn đang cần gấp.", science: "Cắt đứt tín hiệu viễn thông 4G/5G, Wi-Fi và Bluetooth làm giảm tiêu thụ điện nền và giảm nhiệt máy, giúp mạch IC nạp dòng điện tối đa." },
+      { id: 25, title: "Nhảy con trỏ từng từ khi soạn thảo", category: "Công nghệ", icon: "⌨️", tags: ["#van_ban", "#shortcuts"], tip: "Nhấn giữ Ctrl (hoặc Option trên Mac) kết hợp phím mũi tên Trái/Phải.", science: "Hệ thống nhận diện khoảng trắng làm dấu phân cách token từ vựng, giúp con trỏ bỏ qua từng ký tự đơn lẻ để tăng tốc nhập liệu." },
+      { id: 26, title: "Incognito không giấu danh tính với nhà mạng", category: "Công nghệ", icon: "🕵️", tags: ["#an_ninh", "#vpn"], tip: "Chế độ ẩn danh chỉ xóa lịch sử trên máy, muốn bảo mật phải dùng VPN.", science: "Dữ liệu phân giải tên miền (DNS) và địa chỉ IP nguồn/đích vẫn đi qua cổng mạng của ISP hoàn toàn dưới dạng bản rõ không mã hóa." },
+      { id: 27, title: "Khởi động lại Router định kỳ sửa lỗi mạng", category: "Công nghệ", icon: "📡", tags: ["#router", "#wifi"], tip: "Rút điện router Wi-Fi 30 giây rồi cắm lại khi thấy mạng lag chập chờn.", science: "Router là máy tính nhúng chạy hệ điều hành; khởi động lại giúp giải phóng các rò rỉ bộ nhớ (memory leak) và xóa bảng định tuyến NAT bị đầy." },
+      { id: 28, title: "Tìm kiếm chuỗi nguyên văn trên Google", category: "Công nghệ", icon: "🎯", tags: ["#google", "#chinh_xac"], tip: "Đặt cụm từ tìm kiếm trong dấu ngoặc kép: \"cụm từ cần tìm\".", science: "Buộc bộ phân tích cú pháp của Google phải tìm khớp chính xác tuyệt đối thứ tự token mà không áp dụng từ đồng nghĩa hay chia tách." },
+      { id: 29, title: "Tìm kiếm bên trong một website cụ thể", category: "Công nghệ", icon: "🌐", tags: ["#google", "#site"], tip: "Gõ 'site:facebook.com từ khóa' để chỉ tìm thông tin trên trang web đó.", science: "Toán tử site: giới hạn phạm vi truy vấn cơ sở dữ liệu của công cụ tìm kiếm bên trong không gian tên miền con được chỉ định." },
+      { id: 30, title: "Cuộn trang bằng phím cách (Spacebar)", category: "Công nghệ", icon: "📜", tags: ["#trinh_duyet", "#phim_tat"], tip: "Bấm phím Space để cuộn xuống 1 trang màn hình, Shift + Space để cuộn lên.", science: "Tiêu chuẩn điều hướng chuẩn hóa của trình duyệt cho phép cuộn trang dạng khối khung nhìn trực tiếp mà không cần dùng chuột lăn." },
+      { id: 31, title: "Khóa màn hình máy tính nhanh khi rời bàn", category: "Công nghệ", icon: "🔒", tags: ["#bao_mat", "#windows"], tip: "Bấm tổ hợp Windows + L để khóa ngay máy tính trước khi đi vệ sinh.", science: "Gửi tín hiệu ngắt bảo mật trực tiếp đến hệ điều hành để chuyển phiên làm việc của user về màn hình khóa Lock Screen ngay lập tức." },
+      { id: 32, title: "Biến phím cách điện thoại thành bàn rê chuột", category: "Công nghệ", icon: "📱", tags: ["#smartphone", "#ban_phim"], tip: "Nhấn giữ phím Space trên bàn phím ảo rồi trượt ngón tay để di chuyển con trỏ.", science: "Hệ thống bàn phím chuyển sang chế độ trackpad ảo, chuyển đổi tọa độ ngón tay thành dịch chuyển vị trí con trỏ ký tự cực chuẩn." },
+      { id: 33, title: "Không sạc điện thoại ở môi trường quá nóng", category: "Công nghệ", icon: "🔋", tags: ["#pin", "#lithium"], tip: "Tháo ốp lưng khi sạc và tránh sạc pin dưới trời nắng hoặc gầm gối.", science: "Pin Lithium-ion xuống cấp nhanh khi nhiệt độ vượt 35°C do sự hình thành lớp cặn thụ động SEI dày lên làm tăng nội trở của cell pin." },
+      { id: 34, title: "Wi-Fi 5GHz nhanh nhưng xuyên tường kém", category: "Công nghệ", icon: "📶", tags: ["#song_wifi", "#5ghz"], tip: "Ở xa router hoặc cách nhiều bức tường hãy chọn băng tần 2.4GHz.", science: "Tần số cao 5GHz có bước sóng ngắn nên năng lượng sóng bị hấp thụ và suy hao mạnh khi đâm xuyên qua các vật thể rắn như bê tông gạch." },
+      { id: 35, title: "Tắt ứng dụng chạy ngầm liên tục làm hao pin hơn", category: "Công nghệ", icon: "📲", tags: ["#ios", "#android"], tip: "Không cần vuốt tắt toàn bộ app đa nhiệm trên iPhone hay Android xịn.", science: "App ở chế độ nền đã bị đóng băng vào RAM (tiêu thụ điện gần như bằng 0). Ép tắt rồi mở lại buộc CPU phải load lại từ bộ nhớ flash tốn pin hơn." },
+      { id: 36, title: "Tạo mật khẩu bằng cụm từ dài (Passphrase)", category: "Công nghệ", icon: "🛡️", tags: ["#mat_khau", "#entropy"], tip: "Dùng 4-5 từ ngẫu nhiên có dấu cách (vd: CaPheMuoiRatNgon2026) thay vì ký tự quái dị.", science: "Độ khó bẻ khóa (Entropy) phụ thuộc chủ yếu vào độ dài ký tự; cụm từ dài vừa chống tấn công vét cạn (brute-force) vừa cực dễ nhớ." },
+
+      // --- Tâm lý học & Nhận thức (37-52) ---
+      { id: 37, title: "Quy tắc 2 phút đánh bại trì hoãn", category: "Tâm lý học", icon: "⏳", tags: ["#tri_hoan", "#thoi_quen"], tip: "Nếu việc gì tốn dưới 2 phút để làm xong, hãy làm ngay mà không chần chừ.", science: "Bộ não tốn năng lượng ghi nhớ việc chưa làm lớn hơn làm việc đó; bắt đầu 2 phút giúp vượt qua ma sát quán tính và tiết dopamine duy trì đà." },
+      { id: 38, title: "Hiệu ứng Zeigarnik: Nhớ việc dở dang", category: "Tâm lý học", icon: "🧠", tags: ["#zeigarnik", "#tri_nho"], tip: "Khi bế tắc ý tưởng, hãy tạm dừng lại ở điểm đang thông suốt nhất.", science: "Vỏ não duy trì điện thế căng thẳng nhận thức đối với tác vụ chưa xong, kích hoạt mạng lưới tiềm thức tiếp tục kết nối các ý tưởng ngầm." },
+      { id: 39, title: "Kỹ thuật Feynman: Học bằng cách dạy lại", category: "Tâm lý học", icon: "👨‍🏫", tags: ["#hoc_tap", "#feynman"], tip: "Giải thích kiến thức phức tạp bằng từ ngữ mộc mạc nhất cho một đứa trẻ hiểu.", science: "Buộc não loại bỏ thuật ngữ chuyên ngành rườm rà, bộc lộ các lỗ hổng nhận thức và chuyển hóa thông tin thành mô hình tư duy bền vững." },
+      { id: 40, title: "Hiệu ứng Mỏ neo (Anchoring Effect)", category: "Tâm lý học", icon: "⚓", tags: ["#dam_phan", "#gia_ca"], tip: "Con số đầu tiên đưa ra trên bàn đàm phán sẽ chi phối suy nghĩ đối phương.", science: "Não bộ có cơ chế vô thức bám víu vào mẩu dữ liệu ban đầu làm điểm quy chiếu chuẩn mực, sau đó chỉ điều chỉnh xoay quanh phạm vi mỏ neo đó." },
+      { id: 41, title: "Hiệu ứng Spotlight: Ít ai phán xét bạn", category: "Tâm lý học", icon: "🔦", tags: ["#tu_tin", "#spotlight"], tip: "Khi bạn lỡ vấp ngã hoặc mặc áo kỳ lạ, hãy nhớ người khác ít để ý hơn bạn tưởng.", science: "Con người luôn là trung tâm vũ trụ trong thế giới quan của mình, tạo ảo giác phóng đại rằng cả thế giới đang chú ý từng cử chỉ của mình." },
+      { id: 42, title: "Gom cụm Chunking để ghi nhớ số dài", category: "Tâm lý học", icon: "🔢", tags: ["#tri_nho", "#chunking"], tip: "Tách dãy số dài thành các nhóm 3 hoặc 4 số (vd: 0903 - 123 - 456).", science: "Bộ nhớ ngắn hạn của con người chỉ chứa được 5-9 đơn vị thông tin; kỹ thuật nén chunking biến nhiều ký tự thành một khối dữ liệu duy nhất." },
+      { id: 43, title: "Hiệu ứng Ben Franklin: Nhờ vả tạo thiện cảm", category: "Tâm lý học", icon: "🤝", tags: ["#giao_tiep", "#thien_cam"], tip: "Nhờ người chưa thân một việc rất nhỏ (như mượn bút, hỏi đường) để họ quý bạn hơn.", science: "Thuyết bất hòa nhận thức: Não người giúp tự lý giải 'Mình giúp họ chứng tỏ mình có cảm tình với họ', tạo nên thiện cảm nội tại vô thức." },
+      { id: 44, title: "Phương pháp Pomodoro 25/5", category: "Tâm lý học", icon: "🍅", tags: ["#tap_trung", "#pomodoro"], tip: "Làm việc tập trung 25 phút không ngắt quãng rồi nghỉ giải lao 5 phút.", science: "Duy trì khả năng tập trung của vỏ não trước trán trước khi bị cạn kiệt glucose và tích tụ cảm giác căng thẳng thần kinh." },
+      { id: 45, title: "Hiệu ứng Dunning-Kruger", category: "Tâm lý học", icon: "📉", tags: ["#nhan_thuc", "#tu_duy"], tip: "Người biết càng ít về một lĩnh vực lại càng hay tự tin thái quá về khả năng của mình.", science: "Thiếu kiến thức nền tảng khiến người đó thiếu luôn cả năng lực siêu nhận thức (metacognition) để nhận ra những sai lầm và thiếu sót của bản thân." },
+      { id: 46, title: "Hiệu ứng Hawthorne", category: "Tâm lý học", icon: "👁️", tags: ["#hanh_vi", "#quan_sat"], tip: "Con người làm việc năng suất và kỷ luật hơn khi biết mình đang được quan sát.", science: "Ý thức về sự giám sát kích hoạt cơ chế động lực xã hội và khao khát thể hiện hình ảnh bản thân tốt đẹp trước đám đông." },
+      { id: 47, title: "Kỹ thuật 'Đóng cửa vào mặt' (Door-in-the-face)", category: "Tâm lý học", icon: "🚪", tags: ["#thuyet_phuc", "#tam_ly"], tip: "Đưa ra yêu cầu lớn để đối phương từ chối, sau đó ngay lập tức đưa ra yêu cầu nhỏ.", science: "Đối phương cảm nhận sự nhượng bộ từ phía bạn và bị thúc đẩy bởi tâm lý đáp ứng để không cảm thấy có lỗi khi từ chối lần hai." },
+      { id: 48, title: "Kỹ thuật 'Đặt chân vào cửa' (Foot-in-the-door)", category: "Tâm lý học", icon: "👟", tags: ["#thuyet_phuc", "#nho_va"], tip: "Nhờ một việc cực nhỏ dễ dãi trước khi đề xuất một việc quan trọng hơn.", science: "Nguyên lý tính nhất quán hành vi: Con người có xu hướng tiếp tục đồng thuận để giữ hình ảnh bản thân là người hợp tác và đáng tin cậy." },
+      { id: 49, title: "Hiệu ứng Người ngoài cuộc (Bystander Effect)", category: "Tâm lý học", icon: "👥", tags: ["#cuu_ho", "#tam_ly"], tip: "Khi gặp nạn giữa đám đông, hãy chỉ đích danh một người cụ thể để cầu cứu.", science: "Sự phân tán trách nhiệm khiến ai cũng nghĩ người khác sẽ giúp; chỉ đích danh một người sẽ tái lập trách nhiệm cá nhân trực tiếp lên họ." },
+      { id: 50, title: "Lặp lại ngắt quãng (Spaced Repetition)", category: "Tâm lý học", icon: "📅", tags: ["#hoc_tap", "#tri_nho"], tip: "Ôn lại kiến thức theo chu kỳ tăng dần: 1 ngày, 3 ngày, 1 tuần, 1 tháng.", science: "Chống lại đường cong lãng quên Ebbinghaus, củng cố synap thần kinh đúng thời điểm thông tin chuẩn bị mờ nhạt khỏi trí nhớ." },
+      { id: 51, title: "Nghịch lý của sự lựa chọn (Paradox of Choice)", category: "Tâm lý học", icon: "🤔", tags: ["#quyet_dinh", "#giam_tai"], tip: "Giảm bớt các tùy chọn không quan trọng để đưa ra quyết định nhanh hơn.", science: "Quá nhiều lựa chọn làm quá tải nhận thức, gây lo âu hối tiếc về chi phí cơ hội của các phương án bị bỏ qua." },
+      { id: 52, title: "Hiệu ứng Chân lý ảo tưởng (Illusion of Truth)", category: "Tâm lý học", icon: "🗣️", tags: ["#tin_don", "#nhan_thuc"], tip: "Luôn kiểm chứng những câu chuyện được lặp đi lặp lại nhiều lần trên mạng.", science: "Não bộ mặc định gắn cảm giác quen thuộc (cognitive ease) với tính chân thật; điều gì nghe lặp đi lặp lại nhiều lần não tự động coi là đúng." },
+
+      // --- Khoa học thường thức (53-70) ---
+      { id: 53, title: "Nước nóng đóng đá nhanh hơn nước lạnh (Mpemba)", category: "Khoa học", icon: "❄️", tags: ["#mpemba", "#vat_ly"], tip: "Trong điều kiện làm lạnh nhất định, nước nóng có thể đông đá sớm hơn nước lạnh.", science: "Do tốc độ bay hơi bề mặt làm giảm thể tích, đối lưu nhiệt diễn ra mãnh liệt hơn và liên kết hydro dãn nở giải phóng nhiệt nhanh hơn." },
+      { id: 54, title: "Muối làm lạnh lon nước siêu tốc", category: "Khoa học", icon: "🧊", tags: ["#nuoc_da", "#ha_nhiet"], tip: "Cho lon nước vào bát đá, rắc 2 thìa muối và khuấy 2 phút để lạnh buốt.", science: "Muối hòa tan làm tan băng nhưng là phản ứng thu nhiệt mạnh, kéo nhiệt độ hỗn hợp xuống dưới 0°C (-3°C đến -5°C) truyền nhiệt cực nhanh." },
+      { id: 55, title: "Vì sao chim đậu dây điện không bị giật?", category: "Khoa học", icon: "🐦", tags: ["#dien_hoc", "#hieu_dien_the"], tip: "Chim đậu cả hai chân trên cùng một đường dây điện cao thế an toàn.", science: "Dòng điện chỉ chạy khi có độ chênh điện thế ($\Delta V \neq 0$). Hai chân chim trên cùng một dây có điện thế bằng nhau nên dòng điện không đi qua thân chim." },
+      { id: 56, title: "Hoàng hôn mắt nhìn thấy thực chất là ảnh ảo", category: "Khoa học", icon: "🌅", tags: ["#quang_hoc", "#khuc_xa"], tip: "Khi thấy rìa mặt trời vừa chạm đường chân trời, thực tế nó đã lặn từ vài phút trước.", science: "Mật độ khí quyển giảm dần theo độ cao tạo thành thấu kính khổng lồ bẻ cong (khúc xạ) tia sáng mặt trời vòng qua độ cong của Trái Đất." },
+      { id: 57, title: "Nước muối loãng chống thâm miếng táo", category: "Khoa học", icon: "🍏", tags: ["#trai_cay", "#ppo"], tip: "Ngâm táo vừa gọt vào bát nước pha nửa thìa cà phê muối trong 3 phút.", science: "Ion $Na^+$ và $Cl^-$ ức chế enzyme Polyphenol Oxidase (PPO), ngăn chặn polyphenol bị oxy hóa thành sắc tố nâu melanin khi tiếp xúc oxy." },
+      { id: 58, title: "Bầu trời màu xanh do tán xạ Rayleigh", category: "Khoa học", icon: "🌌", tags: ["#tan_xa", "#anh_sang"], tip: "Bầu trời ban ngày có màu xanh lam thay vì các màu sắc khác.", science: "Các phân tử khí trong khí quyển tán xạ ánh sáng có bước sóng ngắn (xanh lam, tím) mạnh hơn nhiều so với ánh sáng bước sóng dài (đỏ, vàng)." },
+      { id: 59, title: "Mặt trăng gần chân trời to hơn là ảo giác Ponzo", category: "Khoa học", icon: "🌕", tags: ["#ao_giac", "#mat_trang"], tip: "Mặt trăng lúc mới mọc to khổng lồ nhưng chụp ảnh kích thước góc không đổi.", science: "Não bộ so sánh mặt trăng với các vật thể quen thuộc ở đường chân trời (cây cối, tòa nhà) và tự động phóng đại tỷ lệ nhận thức." },
+      { id: 60, title: "Hiệu ứng lá sen chống đọng nước", category: "Khoa học", icon: "🪷", tags: ["#sieu_ky_nuoc", "#nano"], tip: "Nước rơi trên lá sen vo tròn thành hạt và cuốn sạch bụi bẩn.", science: "Bề mặt lá sen có cấu trúc vi mô hình gai nhọn phủ lớp sáp kỵ nước nanomet, góc tiếp xúc giọt nước $>150^\circ$ khiến nước không thể bám dính." },
+      { id: 61, title: "Kim cương và than chì cùng một nguyên tố", category: "Khoa học", icon: "💎", tags: ["#hoa_hoc", "#carbon"], tip: "Chất cứng nhất và chất mềm viết chì đều cấu tạo 100% từ Carbon.", science: "Khác biệt ở dạng thù hình: Kim cương có mạng tinh thể tứ diện cực bền vững, than chì xếp lớp phân tử liên kết van der Waals rất yếu." },
+      { id: 62, title: "Sét thực chất phóng từ mặt đất lên mây", category: "Khoa học", icon: "⚡", tags: ["#khi_tuong", "#tia_set"], tip: "Tia chớp sáng chói mà mắt bạn thấy di chuyển từ dưới đất lên bầu trời.", science: "Sau khi luồng tiên đạo (stepped leader) mang điện tích âm từ mây chạm đất, dòng điện hồi quy (return stroke) cực mạnh phóng ngược từ đất lên mây." },
+      { id: 63, title: "Tiếng sấm sinh ra do không khí nung nóng", category: "Khoa học", icon: "🌩️️", tags: ["#song_am", "#nhiet_do"], tip: "Tiếng sấm rền vang sau tia chớp thực chất là một vụ nổ sóng xung kích.", science: "Tia sét nung nóng không khí xung quanh lên tới 30.000°C trong micro-giây, khiến chất khí giãn nở đột ngột tạo nên sóng xung kích âm thanh." },
+      { id: 64, title: "Thủy tinh không phải chất lỏng chảy chậm", category: "Khoa học", icon: "🪟", tags: ["#vat_lieu", "#thuy_tinh"], tip: "Kính cửa sổ nhà cổ dày ở đáy là do kỹ thuật thổi thủ công, không phải kính chảy.", science: "Thủy tinh là chất rắn vô định hình (amorphous solid), các nguyên tử bị khóa chặt trong mạng lưới hỗn độn và không thể chảy ở nhiệt độ phòng." },
+      { id: 65, title: "Ngọn lửa không có bóng", category: "Khoa học", icon: "🔥", tags: ["#quang_hoc", "#ngon_lua"], tip: "Chiếu đèn pin qua ngọn lửa lên tường, bạn sẽ không thấy bóng của ngọn lửa.", science: "Bóng tối hình thành khi vật cản chặn ánh sáng; ngọn lửa là nguồn phát xạ ánh sáng và bản thân thể khí plasma của nó cho ánh sáng đi xuyên qua." },
+      { id: 66, title: "Nước đá nổi vì mạng tinh thể rỗng", category: "Khoa học", icon: "🧊", tags: ["#lien_ket_hydro", "#ti_trong"], tip: "Hầu hết chất rắn chìm trong chất lỏng của nó, ngoại trừ nước đá nổi lên mặt nước.", science: "Khi đóng băng, liên kết hydro sắp xếp phân tử nước thành mạng lục giác rỗng có khoảng cách lớn, làm giảm khối lượng riêng so với nước lỏng." },
+      { id: 67, title: "Sóng âm truyền trong nước nhanh gấp 4 lần không khí", category: "Khoa học", icon: "🌊", tags: ["#song_am", "#moi_truong"], tip: "Âm thanh dưới nước truyền đi cực nhanh và xa hơn trên cạn.", science: "Mật độ phân tử của nước dày đặc và mô đun đàn hồi cao hơn không khí giúp lan truyền dao động cơ học với vận tốc ~1.480 m/s (so với ~343 m/s)." },
+      { id: 68, title: "Nam châm mất từ tính khi bị nung đỏ", category: "Khoa học", icon: "🧲", tags: ["#tu_tinh", "#curie"], tip: "Không hơ nam châm trên ngọn lửa vì nó sẽ trở thành cục kim loại bình thường.", science: "Vượt qua nhiệt độ Curie ($T_c$), động năng nhiệt phá vỡ sự sắp xếp trật tự của các mô-men từ (magnetic domains), triệt tiêu hoàn toàn từ tính." },
+      { id: 69, title: "Tiếng xì lon nước ngọt giải thích bởi định luật Henry", category: "Khoa học", icon: "🥤", tags: ["#dinh_luat_henry", "#co2"], tip: "Mở nắp lon nước có ga sủi bọt ngay lập tức.", science: "Độ tan của khí trong chất lỏng tỷ lệ thuận với áp suất; mở nắp làm áp suất giảm đột ngột khiến $CO_2$ hòa tan bị đẩy ra khỏi dung dịch." },
+      { id: 70, title: "Lò vi sóng làm nóng thức ăn bằng sóng phân cực", category: "Khoa học", icon: "📻", tags: ["#lo_vi_song", "#dipole"], tip: "Lò vi sóng không làm nóng đĩa sứ khô ráo mà chỉ làm nóng thức ăn ẩm.", science: "Sóng điện từ 2.45GHz làm đảo cực các phân tử nước có tính lưỡng cực (dipole) hàng tỷ lần mỗi giây, sinh nhiệt ma sát nội tại làm nóng thức ăn." },
+
+      // --- Sức khỏe & Cơ thể (71-86) ---
+      { id: 71, title: "Thở dài sinh lý (Physiological Sigh) hạ nhịp tim", category: "Sức khỏe", icon: "🫁", tags: ["#giam_stress", "#than_kinh"], tip: "Hít sâu 2 nhịp liên tiếp bằng mũi, rồi thở từ từ thật dài bằng miệng 3 lần.", science: "Nhịp hít kép bung các phế nang đáy phổi xẹp, kích thích thụ thể áp lực ở tim gửi tín hiệu hạ nhịp tim và ngắt adrenaline tức thì." },
+      { id: 72, title: "Tính chu kỳ ngủ 90 phút tránh mệt mỏi", category: "Sức khỏe", icon: "🛌", tags: ["#giac_ngu", "#chu_ky"], tip: "Căn giờ thức dậy là bội số của 1.5 tiếng (ngủ 6h, 7.5h hoặc 9h).", science: "Giấc ngủ gồm các chu kỳ 90 phút từ ngủ nông đến ngủ sâu và REM; thức giấc đúng lúc chu kỳ kết thúc ở pha ngủ nông giúp vỏ não tỉnh táo ngay." },
+      { id: 73, title: "Quy tắc 20-20-20 bảo vệ mắt màn hình", category: "Sức khỏe", icon: "👀", tags: ["#thi_luc", "#co_mat"], tip: "Mỗi 20 phút nhìn màn hình, nhìn ra xa 6 mét trong vòng 20 giây.", science: "Cơ thể mi phải co liên tục khi nhìn gần; nhìn xa 6m đưa mắt về tiêu cự vô cực, thả lỏng toàn bộ nhóm cơ này và giảm khô giác mạc." },
+      { id: 74, title: "Hết tê não (Brain Freeze) bằng ép lưỡi", category: "Sức khỏe", icon: "🥶", tags: ["#te_nao", "#do_lanh"], tip: "Ép chặt mặt trên của lưỡi áp sát vòm họng khi bị buốt óc do ăn kem.", science: "Nhiệt lạnh co thắt mạch máu vòm miệng làm dây thần kinh sinh ba truyền tín hiệu đau; áp lưỡi truyền thân nhiệt làm ấm lại cụm thần kinh này." },
+      { id: 75, title: "Cân bằng áp suất tai khi đi máy bay", category: "Sức khỏe", icon: "✈️", tags: ["#tai_u", "#eustachian"], tip: "Ngáp to, nhai kẹo cao su hoặc nuốt nước bọt khi máy bay cất/hạ cánh.", science: "Động tác nuốt kéo mở vòi Eustache nối tai giữa và vòm họng, cân bằng áp suất khí giữa hai mặt màng nhĩ, ngăn đau buốt tai." },
+      { id: 76, title: "Men răng cứng hơn cả thép tôi mềm", category: "Sức khỏe", icon: "🦷", tags: ["#men_rang", "#khoang_chat"], tip: "Men răng là mô sinh học cứng nhất cơ thể, không chứa tế bào sống.", science: "Chứa 96% khoáng chất tinh thể hydroxyapatite liên kết chặt chẽ, đạt độ cứng 5 trên thang Mohs, cứng hơn xương đùi và kim loại thông thường." },
+      { id: 77, title: "Ngáp là cơ chế làm mát não bộ", category: "Sức khỏe", icon: "🥱", tags: ["#ngap", "#ha_nhiet"], tip: "Bạn thường ngáp khi mệt mỏi, buồn ngủ hoặc ở trong phòng kín ngột ngạt.", science: "Động tác hít sâu đưa luồng không khí mát vào khoang mũi miệng kết hợp tăng lưu lượng máu giúp tản nhiệt cho các mạch máu nuôi vỏ não." },
+      { id: 78, title: "Chặn cơn nấc cụt bằng kích thích phế vị", category: "Sức khỏe", icon: "😮", tags: ["#nac_cut", "#day_phe_vi"], tip: "Nín thở nuốt 3 ngụm nước ấm liên tiếp hoặc uống nước từ mép cốc đối diện.", science: "Nấc do cơ hoành co giật đột ngột; việc nín thở tăng nồng độ $CO_2$ và kích thích dây thần kinh phế vị (vagus nerve) tái lập nhịp co bóp." },
+      { id: 79, title: "Ánh sáng xanh ức chế Melatonin gây khó ngủ", category: "Sức khỏe", icon: "📱", tags: ["#anh_sang_xanh", "#melatonin"], tip: "Bật chế độ lọc ánh sáng vàng (Night Shift) trên điện thoại trước khi ngủ 1 giờ.", science: "Tế bào hạch võng mạc ipRGC nhạy cảm với bước sóng 460-480nm, báo hiệu nhân trên chéo SCN ngừng tiết hormone điều hòa giấc ngủ melatonin." },
+      { id: 80, title: "Ngón tay nhăn khi ngâm nước là phản xạ tăng bám", category: "Sức khỏe", icon: "🖐️", tags: ["#ngon_tay", "#phan_xa"], tip: "Ngâm nước lâu đầu ngón tay chân nhăn nheo không phải do da ngấm nước.", science: "Đây là phản xạ co mạch thần kinh tự chủ tạo các rãnh thoát nước li ti tương tự rãnh lốp xe ướt, giúp tay tăng độ bám khi cầm nắm dưới nước." },
+      { id: 81, title: "Vết bầm đổi màu do phân hủy Hemoglobin", category: "Sức khỏe", icon: "🟣", tags: ["#vet_bam", "#mau"], tip: "Vết bầm chuyển từ đỏ tím sang xanh lục rồi vàng trước khi biến mất.", science: "Hemoglobin đỏ thẫm thoát ra mô bị enzyme phân hủy thành biliverdin (màu xanh lục), sau đó thành bilirubin (màu vàng nhạt) rồi đào thải." },
+      { id: 82, title: "Hiện tượng Déjà vu là lỗi đồng bộ trí nhớ", category: "Sức khỏe", icon: "🌀", tags: ["#deja_vu", "#nao_bo"], tip: "Cảm giác quen thuộc kỳ lạ như từng trải qua khoảnh khắc này trước đây.", science: "Xảy ra khi thông tin cảm giác hiện tại bị não gửi nhầm thẳng vào vùng trí nhớ dài hạn (hồi hải mã) trước khi qua vùng nhận thức hiện tại." },
+      { id: 83, title: "Ngủ trưa 20 phút (Power Nap) giải phóng Adenosine", category: "Sức khỏe", icon: "⚡", tags: ["#ngu_trua", "#adenosine"], tip: "Chỉ nên ngủ trưa từ 15 đến 20 phút, không nên ngủ sâu quá 30 phút.", science: "Adenosine tích tụ trong não gây cảm giác buồn ngủ; giấc chợp mắt 20 phút dọn sạch bớt thụ thể mà chưa rơi vào pha ngủ sâu gây đờ đẫn." },
+      { id: 84, title: "Đau cơ sau tập luyện (DOMS) không do Axit Lactic", category: "Sức khỏe", icon: "🏋️", tags: ["#doms", "#tap_luyen"], tip: "Đau nhức cơ bắp xuất hiện sau 24-48 giờ tập nặng không phải vì đọng axit.", science: "Axit lactic bị gan đào thải chỉ sau 1 giờ tập; cơn đau DOMS là do các vết rách vi mô (micro-tears) ở sợi cơ và phản ứng viêm tự nhiên để phát triển cơ." },
+      { id: 85, title: "Cay là cảm giác đau và nhiệt, không phải vị giác", category: "Sức khỏe", icon: "🌶️", tags: ["#vi_giac", "#capsaicin"], tip: "Lưỡi chỉ có 5 vị: ngọt, chua, mặn, đắng, umami; cay không phải vị.", science: "Capsaicin kích hoạt trực tiếp thụ thể nhiệt TRPV1 (thường chỉ kích hoạt khi nhiệt độ $>43^\circ$C), đánh lừa não bộ rằng mô miệng đang bị bỏng rát." },
+      { id: 86, title: "Dạ dày không tự tiêu hóa nhờ lớp nhầy kiềm", category: "Sức khỏe", icon: "🫄", tags: ["#da_day", "#axit_hcl"], tip: "Axit dạ dày đậm đặc có thể hòa tan kim loại nhưng không làm thủng dạ dày.", science: "Tế bào biểu mô tiết lớp gel chất nhầy giàu ion bicacbonat ($HCO_3^-$) dày trung hòa axit $HCl$, giữ bề mặt mô dạ dày luôn ở pH trung tính an toàn." },
+
+      // --- Đời sống & Tiện ích thường nhật (87-100) ---
+      { id: 87, title: "Tẩy cặn vôi ấm đun bằng giấm ăn", category: "Đời sống", icon: "🫖", tags: ["#ve_sinh", "#can_voi"], tip: "Đun sôi nước pha giấm ăn tỉ lệ 1:1 trong ấm siêu tốc rồi ngâm 15 phút.", science: "Cặn canxi cacbonat ($CaCO_3$) từ nước cứng phản ứng với axit axetic ($CH_3COOH$) tạo muối canxi tan trong nước và giải phóng khí $CO_2$." },
+      { id: 88, title: "Bóc kẹo cao su dính áo bằng đá lạnh", category: "Đời sống", icon: "🧊", tags: ["#quan_ao", "#keo_cao_su"], tip: "Áp viên đá lạnh trực tiếp lên bã kẹo dính trên quần áo cho đến khi kẹo cứng đơ.", science: "Polyme cao su bị hạ nhiệt xuống dưới điểm chuyển dịch thủy tinh ($T_g$), trở nên giòn vụn và mất hoàn toàn tính bám dính vào sợi vải." },
+      { id: 89, title: "Cắm hoa tươi lâu bằng đường và giấm", category: "Đời sống", icon: "💐", tags: ["#hoa_tuoi", "#bao_quan"], tip: "Pha 1 thìa đường nhỏ và vài giọt giấm/cồn vào nước cắm hoa.", science: "Đường cung cấp carbohydrate nuôi dưỡng cánh hoa nở, axit từ giấm ức chế vi khuẩn sinh sôi làm thối gốc và tắc mao mạch dẫn nước." },
+      { id: 90, title: "Làm dịu vết muỗi đốt bằng thìa kim loại ấm", category: "Đời sống", icon: "🦟", tags: ["#muoi_dot", "#nhiet_do"], tip: "Nhúng thìa kim loại vào nước ấm (~50°C) rồi áp nhẹ vào nốt muỗi đốt.", science: "Nhiệt độ khoảng 50°C làm biến tính cấu trúc protein chống đông máu do muỗi tiêm vào và ức chế truyền dẫn histamin gây ngứa tại chỗ." },
+      { id: 91, title: "Hồi phục áo len bị co bằng dầu xả tóc", category: "Đời sống", icon: "🧶", tags: ["#ao_len", "#keratin"], tip: "Ngâm áo len co rút vào chậu nước ấm pha 2 thìa dầu xả 20 phút rồi kéo nhẹ.", science: "Sợi len là protein keratin; hoạt chất làm mềm trong dầu xả bôi trơn lớp vảy biểu bì sợi len, giảm ma sát cho phép kéo dãn sợi về phom cũ." },
+      { id: 92, title: "Khử mùi hôi giày bằng gói trà khô", category: "Đời sống", icon: "👟", tags: ["#khu_mui", "#giay_dep"], tip: "Bỏ 2 túi lọc trà khô hoặc chút baking soda vào trong giày để qua đêm.", science: "Lá trà khô háo nước hút ẩm đọng và hợp chất tannin kháng khuẩn tiêu diệt vi khuẩn kỵ khí phân hủy mồ hôi gây mùi chân." },
+      { id: 93, title: "Tháo nhẫn chật ngón tay bằng sợi chỉ", category: "Đời sống", icon: "💍", tags: ["#meo_vat", "#thao_nhan"], tip: "Luồn sợi chỉ qua nhẫn, quấn chặt phần ngón tay phía trước rồi cầm đầu chỉ kéo xoay.", science: "Quấn chỉ nén chặt tạm thời các mô mềm và mao mạch làm giảm đường kính khớp ngón tay, tạo rãnh xoắn ốc đẩy nhẫn trượt ra ngoài dễ dàng." },
+      { id: 94, title: "Dán băng dính trước khi khoan tường tránh vỡ", category: "Đời sống", icon: "🧱", tags: ["#khoan_tuong", "#gach_men"], tip: "Dán một miếng băng keo giấy lên mặt gạch men trước khi đặt mũi khoan.", science: "Băng dính tăng ma sát ngăn mũi khoan bị trượt xước gạch, đồng thời phân tán ứng suất bề mặt chống nứt vỡ men gốm giòn." },
+      { id: 95, title: "Gỡ rối dây chuyền bằng phấn rôm", category: "Đời sống", icon: "📿", tags: ["#go_roi", "#phan_rom"], tip: "Rắc một ít phấn rôm hoặc bột bắp lên nút thắt dây chuyền kim loại rồi gỡ nhẹ.", science: "Bột mịn len lỏi vào các khe hở siêu nhỏ làm giảm lực ma sát tĩnh giữa các mắt xích kim loại, giúp nới lỏng nút thắt nhanh chóng." },
+      { id: 96, title: "Tẩy mực bút bi trên áo bằng cồn y tế", category: "Đời sống", icon: "🖊️", tags: ["#tay_vet_ban", "#con_70"], tip: "Chấm cồn 70-90 độ lên vết mực bút bi rồi dùng khăn giấy thấm hút ra.", science: "Dung môi mực bút bi thường là gốc dầu không phân cực; cồn hòa tan dung môi mực hiệu quả hơn nước xà phòng thông thường." },
+      { id: 97, title: "Thìa inox treo miệng chai champagne giữ ga", category: "Đời sống", icon: "🍾", tags: ["#champagne", "#giu_gas"], tip: "Treo ngược một chiếc thìa kim loại vào cổ chai sâm panh rồi để tủ lạnh.", science: "Cán kim loại dẫn lạnh tốt làm lạnh khối không khí ở cổ chai nhanh hơn, tạo bẫy nhiệt độ đặc giữ khí $CO_2$ hòa tan không bốc hơi." },
+      { id: 98, title: "Hâm pizza giòn đế với cốc nước trong lò vi sóng", category: "Đời sống", icon: "🍕", tags: ["#ham_nong", "#pizza"], tip: "Đặt một cốc nước nhỏ bên cạnh miếng pizza khi quay lò vi sóng.", science: "Nước trong cốc hấp thụ bớt năng lượng vi sóng dư thừa và cung cấp độ ẩm nhẹ, ngăn đế bánh bị rút cạn ẩm biến thành cao su dai ngoách." },
+      { id: 99, title: "Bảo quản quả bơ cắt dở bằng màng bọc ép sát", category: "Đời sống", icon: "🥑", tags: ["#trai_bo", "#oxy_hoa"], tip: "Ép màng bọc thực phẩm dính sát vào bề mặt thịt quả bơ không để lọt khe khí.", science: "Ngăn cản hoàn toàn oxy trong không khí tiếp xúc với enzyme polyphenol oxidase, giữ thịt quả bơ xanh tươi không bị thâm xỉn." },
+      { id: 100, title: "Đánh bay nồi cháy khét bằng đun sôi baking soda", category: "Đời sống", icon: "🥘", tags: ["#ve_sinh", "#noi_chay"], tip: "Đổ nước ngập vết cháy, thêm 2 thìa baking soda rồi đun sôi lăn tăn 10 phút.", science: "Nhiệt độ kết hợp tính kiềm nhẹ của natri bicacbonat xà phòng hóa các liên kết chất béo và cacbon hóa cháy đen, làm mảng bám tự bong tróc." }
+    ];
+
+    // Bộ câu hỏi Mini-Game
+    const quizQuestions = [
+      { question: "Cắm sạc smartphone qua đêm sẽ làm chai phồng pin hoặc nổ pin?", isTrue: false, explanation: "Sai. Smartphone hiện đại có chip IC điều khiển nguồn tự ngắt dòng sạc vào cell pin khi đạt 100%." },
+      { question: "Muối thêm vào nước đá có thể làm nhiệt độ nước đá hạ xuống dưới 0°C?", isTrue: true, explanation: "Đúng. Hiện tượng hạ điểm đông đặc kết hợp với quá trình muối hòa tan thu nhiệt giúp nhiệt độ hỗn hợp giảm sâu tới -4°C." },
+      { question: "Bánh mì để ở ngăn mát tủ lạnh sẽ lâu hỏng và giữ độ xốp tốt hơn?", isTrue: false, explanation: "Sai. Nhiệt độ ngăn mát (2-8°C) đẩy nhanh hiện tượng thoái hóa tinh bột gấp 6 lần, làm bánh khô cứng rất nhanh." },
+      { question: "Ăn ớt cay thì uống sữa tươi giúp giảm cay hiệu quả hơn nước lọc?", isTrue: true, explanation: "Đúng. Protein casein trong sữa hoạt động như chất tẩy tự nhiên cuốn trôi phân tử capsaicin khỏi thụ thể." },
+      { question: "Não người bình thường chỉ hoạt động khoảng 10% công suất?", isTrue: false, explanation: "Sai. Ảnh chụp cộng hưởng từ chức năng fMRI chứng minh toàn bộ não đều hoạt động liên tục." },
+      { question: "Nước nóng trong một số điều kiện có thể đông đá nhanh hơn nước lạnh?", isTrue: true, explanation: "Đúng. Đây là hiệu ứng Mpemba đã được khoa học ghi nhận nhờ sự bay hơi, đối lưu nhiệt và liên kết hydro." },
+      { question: "Chế độ ẩn danh (Incognito) giúp bạn hoàn toàn vô hình trước nhà mạng?", isTrue: false, explanation: "Sai. Ẩn danh chỉ không lưu cookie trên máy, nhà mạng vẫn thấy toàn bộ IP và domain bạn truy cập." },
+      { question: "Men răng là cấu trúc sinh học cứng nhất trong cơ thể người?", isTrue: true, explanation: "Đúng. Men răng chứa 96% khoáng chất hydroxyapatite, cứng hơn cả xương đùi và thép tôi mềm." }
+    ];
+
+    let activeCategory = 'Tất cả';
+    let searchQuery = '';
+    let favorites = JSON.parse(localStorage.getItem('omnipedia_favs_v3') || '[]');
+    let currentQuizIndex = 0;
+    let quizScore = 0;
+    let searchDebounceTimer = null;
+
+    const rawCategories = ['Tất cả', 'Yêu thích', ...new Set(tipsData.map(t => t.category))];
+
+    function renderCategories() {
+      const container = document.getElementById('categoryContainer');
+      container.innerHTML = rawCategories.map(cat => {
+        const isActive = cat === activeCategory;
+        let count = (cat === 'Tất cả') ? tipsData.length : (cat === 'Yêu thích') ? favorites.length : tipsData.filter(t => t.category === cat).length;
+        return `
+          <button onclick="setCategory('${cat}')" class="touch-btn whitespace-nowrap px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border flex items-center gap-1.5 active:scale-95 ${
+            isActive ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+          }">
+            <span>${cat === 'Yêu thích' ? '⭐ Yêu thích' : cat}</span>
+            <span class="text-[10px] px-1.5 rounded-md ${isActive ? 'bg-indigo-700 text-white' : 'bg-slate-800 text-slate-400'} font-mono">${count}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function setCategory(cat) {
+      triggerHaptic(8);
+      playBeep(480, 0.05);
+      activeCategory = cat;
+      renderCategories();
+      renderCards();
+    }
+
+    function toggleFavorite(id, e) {
+      e.stopPropagation();
+      triggerHaptic(15);
+      playBeep(750, 0.08);
+      favorites = favorites.includes(id) ? favorites.filter(favId => favId !== id) : [...favorites, id];
+      localStorage.setItem('omnipedia_favs_v3', JSON.stringify(favorites));
+      renderCategories();
+      renderCards();
+    }
+
+    function copyTipContent(id, e) {
+      e.stopPropagation();
+      triggerHaptic(10);
+      playBeep(820, 0.06);
+      const item = tipsData.find(t => t.id === id);
+      if (item) {
+        navigator.clipboard.writeText(`💡 ${item.title}\n👉 Mẹo: ${item.tip}\n🔬 Khoa học: ${item.science}`).then(() => {
+          showToast('Đã sao chép mẹo!');
+        });
+      }
+    }
+
+    function toggleFlip(cardEl) {
+      triggerHaptic(10);
+      playBeep(520, 0.06);
+      cardEl.classList.toggle('card-flipped');
+    }
+
+    function renderCards() {
+      const grid = document.getElementById('cardsGrid');
+      const emptyState = document.getElementById('emptyState');
+
+      const filtered = tipsData.filter(item => {
+        const matchCategory = activeCategory === 'Tất cả' ? true : activeCategory === 'Yêu thích' ? favorites.includes(item.id) : item.category === activeCategory;
+        const q = searchQuery.toLowerCase().trim();
+        const matchSearch = !q || (item.title.toLowerCase().includes(q) || item.tip.toLowerCase().includes(q) || item.science.toLowerCase().includes(q) || item.tags.some(t => t.toLowerCase().includes(q)));
+        return matchCategory && matchSearch;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      grid.innerHTML = filtered.map(item => {
+        const isFav = favorites.includes(item.id);
+        return `
+          <div id="card-${item.id}" class="perspective-1000 h-[20.5rem] cursor-pointer select-none group" onclick="toggleFlip(this)">
+            <div class="card-inner relative w-full h-full">
+              <!-- Mặt trước -->
+              <div class="absolute inset-0 backface-hidden rounded-3xl bg-slate-900 border border-slate-800 p-5 flex flex-col justify-between shadow-xl group-hover:border-indigo-500/40 transition">
+                <div>
+                  <div class="flex items-center justify-between gap-2 mb-2.5">
+                    <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                      ${item.category}
+                    </span>
+                    <div class="flex items-center gap-1">
+                      <button onclick="copyTipContent(${item.id}, event)" class="p-1.5 text-slate-400 hover:text-indigo-300 rounded-lg" title="Copy">📋</button>
+                      <button onclick="toggleFavorite(${item.id}, event)" class="p-1.5 text-lg leading-none ${isFav ? 'text-amber-400' : 'text-slate-500 hover:text-slate-300'}">
+                        ${isFav ? '★' : '☆'}
+                      </button>
+                    </div>
+                  </div>
+                  <h3 class="text-base font-bold text-white mb-2 flex items-start gap-2">
+                    <span class="text-xl leading-none">${item.icon}</span>
+                    <span>${item.title}</span>
+                  </h3>
+                  <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">${item.tip}</p>
+                </div>
+                <div>
+                  <div class="flex flex-wrap gap-1 mb-2.5">
+                    ${item.tags.map(t => `<span class="text-[10px] text-slate-400 font-mono px-1.5 py-0.5 rounded bg-slate-800/80">${t}</span>`).join('')}
+                  </div>
+                  <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-indigo-400 font-semibold">
+                    <span>Xem cơ chế</span>
+                    <span>⟳ Lật thẻ</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Mặt sau -->
+              <div class="absolute inset-0 backface-hidden rotate-y-180 rounded-3xl bg-gradient-to-br from-indigo-950/90 via-slate-900 to-slate-950 border border-indigo-500/40 p-5 flex flex-col justify-between shadow-2xl">
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                      🔬 Bản chất khoa học
+                    </span>
+                    <span class="text-[10px] font-mono text-slate-400">#${item.id}</span>
+                  </div>
+                  <h4 class="text-sm font-bold text-indigo-200 mb-2">${item.title}</h4>
+                  <p class="text-slate-200 text-xs sm:text-sm leading-relaxed">${item.science}</p>
+                </div>
+                <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 font-semibold">
+                  <span>Chạm để lật lại</span>
+                  <span>↺ Mặt trước</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Xử lý tìm kiếm Debounce
+    const searchInput = document.getElementById('searchInput');
+    const clearSearch = document.getElementById('clearSearch');
+    searchInput.addEventListener('input', (e) => {
+      clearTimeout(searchDebounceTimer);
+      clearSearch.classList.toggle('hidden', !e.target.value);
+      searchDebounceTimer = setTimeout(() => {
+        searchQuery = e.target.value;
+        renderCards();
+      }, 120);
+    });
+
+    clearSearch.addEventListener('click', () => {
+      searchInput.value = '';
+      searchQuery = '';
+      clearSearch.classList.add('hidden');
+      renderCards();
+    });
+
+    // Bốc thăm ngẫu nhiên
+    document.getElementById('dockRandomBtn').addEventListener('click', () => {
+      triggerHaptic(25);
+      playBeep(880, 0.15);
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.3 } });
+
+      const targetTip = tipsData[Math.floor(Math.random() * tipsData.length)];
+      activeCategory = 'Tất cả';
+      searchQuery = '';
+      searchInput.value = '';
+      clearSearch.classList.add('hidden');
+      renderCategories();
+      renderCards();
+
+      setTimeout(() => {
+        const el = document.getElementById(`card-${targetTip.id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('ring-4', 'ring-amber-400', 'rounded-3xl');
+          setTimeout(() => {
+            el.classList.toggle('card-flipped');
+            setTimeout(() => el.classList.remove('ring-4', 'ring-amber-400'), 2500);
+          }, 450);
+        }
+      }, 100);
+    });
+
+    // Cuộn lên đầu
+    document.getElementById('dockTopBtn').addEventListener('click', () => {
+      triggerHaptic(8);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Chuyển chế độ sáng/tối
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    themeToggle.addEventListener('click', () => {
+      triggerHaptic(10);
+      playBeep(600, 0.05);
+      const isDark = document.documentElement.classList.toggle('dark');
+      themeIcon.textContent = isDark ? '☀️️' : '🌙';
+    });
+
+    // Hệ thống Quiz
+    const quizModal = document.getElementById('quizModal');
+    const closeQuiz = document.getElementById('closeQuiz');
+    const quizContent = document.getElementById('quizContent');
+
+    document.getElementById('dockQuizBtn').addEventListener('click', () => {
+      triggerHaptic(15);
+      currentQuizIndex = 0;
+      quizScore = 0;
+      quizModal.classList.remove('hidden');
+      renderQuizQuestion();
+    });
+
+    closeQuiz.addEventListener('click', () => quizModal.classList.add('hidden'));
+
+    function renderQuizQuestion() {
+      if (currentQuizIndex >= quizQuestions.length) {
+        quizContent.innerHTML = `
+          <div class="text-center py-5">
+            <div class="text-5xl mb-3">🏆</div>
+            <h3 class="text-xl font-extrabold text-white mb-2">Thử Thách Hoàn Thành!</h3>
+            <p class="text-slate-300 text-sm mb-6">Bạn trả lời đúng <span class="text-indigo-400 font-extrabold text-lg">${quizScore}/${quizQuestions.length}</span> câu hỏi.</p>
+            <button onclick="quizModal.classList.add('hidden')" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-sm font-bold shadow-lg">Đóng</button>
+          </div>
+        `;
+        return;
+      }
+      const q = quizQuestions[currentQuizIndex];
+      quizContent.innerHTML = `
+        <div>
+          <div class="flex items-center justify-between text-xs text-slate-400 mb-3 font-mono">
+            <span>Câu hỏi ${currentQuizIndex + 1} / ${quizQuestions.length}</span>
+            <span class="text-indigo-300 font-bold">Điểm: ${quizScore}</span>
+          </div>
+          <h3 class="text-base sm:text-lg font-bold text-white mb-6 leading-snug">${q.question}</h3>
+          <div class="grid grid-cols-2 gap-3 mb-4">
+            <button onclick="handleAnswer(true)" class="touch-btn py-3 px-4 bg-slate-800 hover:bg-emerald-600 hover:text-white rounded-2xl font-bold text-sm transition active:scale-95 border border-slate-700">✓ THẬT</button>
+            <button onclick="handleAnswer(false)" class="touch-btn py-3 px-4 bg-slate-800 hover:bg-rose-600 hover:text-white rounded-2xl font-bold text-sm transition active:scale-95 border border-slate-700">✗ TIN ĐỒN</button>
+          </div>
+          <div id="quizFeedback" class="text-xs text-slate-200 min-h-[3.2rem] p-3 bg-slate-950/80 border border-slate-800 rounded-xl hidden"></div>
+        </div>
+      `;
+    }
+
+    window.handleAnswer = function(userPick) {
+      const q = quizQuestions[currentQuizIndex];
+      const isCorrect = userPick === q.isTrue;
+      const feedback = document.getElementById('quizFeedback');
+      if (isCorrect) {
+        quizScore++;
+        triggerHaptic(15);
+        playBeep(800, 0.1);
+      } else {
+        triggerHaptic(40);
+        playBeep(260, 0.15, 'sawtooth');
+      }
+      feedback.classList.remove('hidden');
+      feedback.innerHTML = `<span class="${isCorrect ? 'text-emerald-400' : 'text-rose-400'} font-bold">${isCorrect ? '✓ Đúng rồi! ' : '✗ Chưa chính xác! '}</span>${q.explanation}`;
+      setTimeout(() => {
+        currentQuizIndex++;
+        renderQuizQuestion();
+      }, 2200);
+    };
+
+    renderCategories();
+    renderCards();
+  </script>
+</body>
+</html>
